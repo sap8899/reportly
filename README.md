@@ -20,6 +20,8 @@ Insert User principal name of a suspicious user.<br>
 Insert start and end times in the following format: 2022-11-16<br>
 **I recommend a range of no longer then a week.**
 
+The reports are created in the executable's directory.
+
 # Installation
 In order to use the tool you will need an AzureAD application with the following **delegated** microsoft graph api permissions:<br>
 * AuditLog.Read.All<br>
