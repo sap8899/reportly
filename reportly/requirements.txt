@@ -1,7 +1,7 @@
 datetime
 json
 configparser
-azure.identity
-msgraph.core
-plotly_express
+azure-identity
+msgraph-core
+plotly-express
 pandas
