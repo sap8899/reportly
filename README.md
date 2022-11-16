@@ -11,6 +11,10 @@ When running the tool, the researcher will enter as input a suspicious user and 
 3. Actions taken on the user 
 4. User login and failure logs
 
+
+https://user-images.githubusercontent.com/88736901/202284687-9862e097-a5d6-4557-a474-d99e37269c2e.mp4
+
+
 # Usage
 Insert User principal name of a suspicious user.<br>
 Insert start and end times in the following format: 2022-11-16<br>
