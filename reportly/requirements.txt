@@ -1,0 +1,8 @@
+datetime
+json
+configparser
+azure.identity
+msgraph.core
+plotly.express
+plotly.graph_objects
+pandas
