@@ -1,5 +1,4 @@
 datetime
-json
 configparser
 azure-identity
 msgraph-core
