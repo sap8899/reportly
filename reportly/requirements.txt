@@ -3,6 +3,5 @@ json
 configparser
 azure.identity
 msgraph.core
-plotly.express
-plotly.graph_objects
+plotly_express==0.4.0
 pandas
