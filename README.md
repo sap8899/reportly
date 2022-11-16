@@ -1,4 +1,5 @@
-# Reportly
+![logo](https://user-images.githubusercontent.com/88736901/202279289-4148a6db-e690-44ab-90c6-6d0faff67ed9.png)
+
 Reportly is an AzureAD user activity report tool.
 
 # About the tool
