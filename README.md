@@ -29,10 +29,23 @@ In order to use the tool you will need an AzureAD application with the following
 * RoleManagement.Read.Directory<br>
 * User.Read<br>
 * User.Read.All<br>
-**dont forget to grant admin consent**
+<br>**dont forget to grant admin consent**
 ![image](https://user-images.githubusercontent.com/88736901/202277163-5ee21b25-397c-4132-8598-de53d9ae168d.png)
+<br>
+To create an application go to "App registration" tab and select "New registration" option.
+![image](https://user-images.githubusercontent.com/88736901/202480881-6ad5c099-8ff5-4e26-b88d-6dfac4a360c1.png)
 
-Add a secret to the application.
+
+<br>Also, when creating the application, make sure you mark the following option as "yes":
+![image](https://user-images.githubusercontent.com/88736901/202479500-fd0e5ebf-c4bd-4745-a0dc-8057e39d51cf.png)
+* you can find this property under the application's "Authentication" tab.
+
+<br>Add a secret to the application.
+![image](https://user-images.githubusercontent.com/88736901/202480440-4bc20d18-ba90-491d-885a-049126d29e45.png)
+
+* Go to "Certificates & secrets"
+* Add a secret
+* Immediately copy the secret to the config file (after you watch it once, it disappears)
 
 After you created the application you need to fill the config.cfg file:<br>
 clientId = application id<br>
