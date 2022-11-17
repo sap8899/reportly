@@ -33,7 +33,8 @@ In order to use the tool you will need an AzureAD application with the following
 ![image](https://user-images.githubusercontent.com/88736901/202277163-5ee21b25-397c-4132-8598-de53d9ae168d.png)
 <br>
 To create an application go to "App registration" tab and select "New registration" option.
-![image](https://user-images.githubusercontent.com/88736901/202480881-6ad5c099-8ff5-4e26-b88d-6dfac4a360c1.png)
+
+![image](https://user-images.githubusercontent.com/88736901/202481694-979c2dd3-7484-4e65-ba17-9298701a1ca1.png)
 
 
 <br>Also, when creating the application, make sure you mark the following option as "yes":
