@@ -16,10 +16,17 @@ https://user-images.githubusercontent.com/88736901/202284687-9862e097-a5d6-4557-
 
 
 # Usage
+When running the tool, a link to authentication and a device code will show, follow the link and enter the code to authenticate.
+![image](https://user-images.githubusercontent.com/88736901/202486022-ba2d97b3-3754-4a65-b191-8df87c9b24f9.png)
+
 Insert User principal name of a suspicious user.<br>
 Insert start and end times in the following format: 2022-11-16<br>
 **I recommend a range of no longer then a week.**
 
+After authentication, in order to create a full report choose the option "5"
+![image](https://user-images.githubusercontent.com/88736901/202486220-211a797c-bd10-4852-aa8d-ac29a893590e.png)
+
+When the report will be ready the tool will print "Your report is ready!".
 The reports are created in the executable's directory.
 
 # Installation
