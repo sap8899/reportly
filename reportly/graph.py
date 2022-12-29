@@ -9,6 +9,7 @@ import plotly.express as px
 import pandas as pd
 import plotly.graph_objects as go
 from gui import Gui
+from ips import IPS
 
 class Graph:
     settings: SectionProxy
@@ -28,11 +29,28 @@ class Graph:
         self.audit_initiated = []
         self.audit_target = []
         self.audit_signin = []
+        self.bad_signin = []
+        self.ips = {}
         self.roles_list = {}
         self.accept_activity = ["Remove owner from group", "Remove member from group", "Add owner to group", "Add member to role", "Add member to group"]
-        self.accept_category = ["UserManagement", "ApplicationManagement", "RoleManagement"]
+        self.not_accept_category = ["GroupManagement"]
+        self.device_code_credential = DeviceCodeCredential(client_id,tenant_id = tenant_id)
         self.device_code_credential = DeviceCodeCredential(client_id, tenant_id = tenant_id)
         self.user_client = GraphClient(credential=self.device_code_credential, scopes=graph_scopes)
+
+
+    def bad_sigin_errors(self):
+        signin = self.bad_signin
+        error_code_list = [50088]
+        out = []
+        for event in signin:
+            if event["code"] in error_code_list:
+                out.append(event)
+        
+        return out
+                
+    def get_ips(self):
+        return self.ips
 
     def get_user_token(self):
         graph_scopes = self.settings['graphUserScopes']
@@ -153,7 +171,8 @@ class Graph:
             activity = event['activityDisplayName']
             created = event['activityDateTime']
             id = event['id']
-            if category in self.accept_category or activity in self.accept_activity:
+            result = event['result']
+            if category not in self.not_accept_category or activity in self.accept_activity:
                 targets = event['targetResources']
                 for target in targets:
                 
@@ -187,6 +206,7 @@ class Graph:
                 temp_dict["category"] = category
                 temp_dict["activity"] = activity
                 temp_dict["created"] = created
+                temp_dict["result"] = result
                 if(func == "initiated"):
                     temp_dict["Information"] = targets_output
                     self.audit_initiated.append(temp_dict)
@@ -197,7 +217,7 @@ class Graph:
     
     def create_graph_initiated(self):
         source = pd.DataFrame(self.audit_initiated)
-        fig = px.scatter(source, x=source['created'], y=source['activity'], title=f"Initiated Activities by {self.sus_user}",
+        fig = px.scatter(source, x=source['created'], y=source['activity'],color="result", title=f"Initiated Activities by {self.sus_user}",
              hover_data=[source['Information']],
              labels={
                      "created": "Time",
@@ -215,7 +235,7 @@ class Graph:
 
     def create_graph_target(self):
         source = pd.DataFrame(self.audit_target)
-        fig = px.scatter(source, x=source['created'], y=source['activity'], title=f"Activities performed on {self.sus_user}", 
+        fig = px.scatter(source, x=source['created'], y=source['activity'],color="result", title=f"Activities performed on {self.sus_user}", 
             hover_data=[source['Information']],
             labels={
                      "created": "Time",
@@ -245,6 +265,7 @@ class Graph:
         if len(self.audit_signin) == 0:
             return "No logs"
         
+        
 
     def get_audit_signIn_failed(self):
         sus = self.sus_user.lower()
@@ -260,9 +281,11 @@ class Graph:
         if len(self.audit_signin) == 0:
             return "No logs"
     
+
     def parse_signin(self, audit, func):
         start = datetime.datetime.strptime(self.start_date, '%Y-%m-%d').date()
         end = datetime.datetime.strptime(self.end_date, '%Y-%m-%d').date()
+        
         for event in audit:
             temp_dict = {}
             created = event['createdDateTime']
@@ -270,6 +293,7 @@ class Graph:
             interactive = event['isInteractive']
             ip = event['ipAddress']
             app_used = event['clientAppUsed']
+            
             hover_string = f"<br>Interactive: {interactive}<br>ip: {ip}<br>app used: {app_used}"
             if func == "failed":
                 status_dict = event['status']
@@ -286,6 +310,18 @@ class Graph:
                 temp_dict["resource"] = resource
                 temp_dict["Information"] = hover_string
                 self.audit_signin.append(temp_dict)
+                if self.ips.get(ip) != None:
+                    ip_object = self.ips[ip]
+                    ip_object["count"] += 1
+                    ip_object["app_used"].add(app_used)
+                    ip_object["resource"].add(resource)
+                else:
+                    self.ips[ip] = {"count":1, "app_used":set([app_used]), "resource":set([resource])}
+                if func == "failed":
+                    bad_dict = {"created":created,"resource":resource,"ip":ip,"app_used":app_used,"code":code,"reason":reason,"details":details}
+                    self.bad_signin.append(bad_dict)
+
+
 
     def create_graph_signin(self):
         signin = pd.DataFrame(self.audit_signin)
@@ -297,13 +333,12 @@ class Graph:
                      "type": "Login status"
                  }
                 )
-        #fig.show()
         fig.update_layout(paper_bgcolor=" #e6f0ff")
         url = fig.write_html("report_signin.html")
 
-    def generate_report(self, initiated, target, signin):
+    def generate_report(self, initiated, target, signin,ips, signin_errors):
         groups = self.get_sus_groups()
         user = self.get_sus_user()
         roles = self.get_sus_roles()
-        gui: Gui = Gui(user, groups, roles, initiated, target, signin)
+        gui: Gui = Gui(user, groups, roles, initiated, target, signin, ips, signin_errors)
         gui.generate_report()
