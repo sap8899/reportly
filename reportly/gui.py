@@ -11,13 +11,36 @@ import plotly.graph_objects as go
 
 
 class Gui:    
-    def __init__(self, sus, groups, roles, initiated, target, signin):
+    def __init__(self, sus, groups, roles, initiated, target, signin,ips,signin_erros):
         self.sus = sus
         self.groups = groups
         self.roles = roles
         self.initiated = initiated
         self.target = target
         self.signin = signin
+        self.signin_erros = signin_erros
+        self.ips = ips
+
+    def parse_bad_signin(self):
+        if len(self.signin_erros) == 0:
+            return "No suspicious events."
+        errors = pd.DataFrame(data=self.signin_erros)
+        errors = errors.fillna(' ')
+        errors_html = errors.style.to_html(classes='table table-stripped')
+        return errors_html
+
+    def parse_ips(self):
+        if len(self.ips) == 0:
+            return "No IPs."
+        sus_ips = pd.DataFrame(data=self.ips)
+        sus_ips = sus_ips.fillna(' ')
+        ips_out = sus_ips.style.to_html(classes='table table-stripped')
+        #ips_out = ""
+        #for ip in sus_ips:
+        #    data = sus_ips[ip]
+        #    ips_out += f"IP: {ip}<br>Count: {data['count']}; Apps: {data['app_used']}; Resources: {data['resource']}<br><br>"
+        return ips_out
+
 
     def create_roles_string(self):
         if self.roles == "This user has no roles.":
@@ -36,6 +59,7 @@ class Gui:
         return groups_html
 
     def generate_report(self):
+        errors_html = self.parse_bad_signin()
         groups_html = self.create_groups_output()
         roles_html = self.create_roles_string()
         if self.sus['onPremisesSyncEnabled']:
@@ -57,9 +81,11 @@ class Gui:
 
         if self.signin == "This user has not logged in.":
             sigin_html = self.signin
+            sus_ips = "No IPs."
         else:
             with open(r"report_signin.html", 'r') as f:
                 sigin_html = f.read()
+            sus_ips = self.parse_ips()
         
         html_string = '''
 <!doctype html>
@@ -134,7 +160,16 @@ class Gui:
         <!-- *** Section 2 *** --->
         <h2>User sign-in graph:</h2>
         ''' + sigin_html + '''
-
+        <p class="thick">IP:</p><br>
+        <button type="button" class="collapsible">Click to show ips analytics</button>
+<div class="content">
+   ''' + sus_ips + '''
+</div>
+        <p class="thick">Suspicios failed logins:</p><br>
+        <button type="button" class="collapsible">Click to show suspiscious failed logins</button>
+<div class="content">
+   ''' + errors_html + '''
+</div> 
     
     </body>
     <script>
