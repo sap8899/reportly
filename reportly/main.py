@@ -1,5 +1,6 @@
 import configparser
 from graph import Graph
+from ips import IPS
 import plotly.express as px
 import pandas as pd
 
@@ -26,7 +27,6 @@ U |  _"\ u \| ___"|/U|  _"\ u  \/"_ \/U |  _"\ u  |_ " _|  |"|     \ \ / /
     end_date = input("Enter end date: ")
 
     graph: Graph = Graph(azure_settings, sus_user, start_date, end_date)
-
     greet_user(graph)
 
     choice = -1
@@ -88,11 +88,28 @@ def call_signin(graph: Graph):
         return "This user has not logged in."
     graph.create_graph_signin()
 
+def get_sus_ips(graph: Graph):
+    ips_dict = graph.get_ips()
+    ips: IPS = IPS(ips_dict)
+    ips.analyze_ips()
+    sus_ips = ips.median_out_ips
+    sus_ips_info = {}
+    for ip in sus_ips:
+        info = ips.return_ip_info(ip)
+        sus_ips_info[ip] = info
+    return sus_ips_info
+    
+def get_sigin_errors(graph:Graph):
+    errors_list = graph.bad_sigin_errors()
+    return errors_list
+
 def create_final_report(graph:Graph):
     initiated = call_audit_initiated(graph)
     target = call_audit_target(graph)
     signin = call_signin(graph)
-    graph.generate_report(initiated, target, signin)
+    ips = get_sus_ips(graph)
+    signin_errors = get_sigin_errors(graph)
+    graph.generate_report(initiated, target, signin, ips,signin_errors)
     print("Your report is ready!")
 
 main()
