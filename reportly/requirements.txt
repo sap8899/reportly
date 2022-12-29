@@ -4,3 +4,4 @@ azure-identity
 msgraph-core
 plotly-express
 pandas
+Jinja2
