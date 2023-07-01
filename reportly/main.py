@@ -4,6 +4,7 @@ from ips import IPS
 import plotly.express as px
 import pandas as pd
 
+
 def main():
     print('''
    ____    U _____ u  ____    U  ___ u   ____      _____    _      __   __ 
@@ -28,37 +29,7 @@ U |  _"\ u \| ___"|/U|  _"\ u  \/"_ \/U |  _"\ u  |_ " _|  |"|     \ \ / /
 
     graph: Graph = Graph(azure_settings, sus_user, start_date, end_date)
     greet_user(graph)
-
-    choice = -1
-
-    while choice != 0:
-        print('Please choose one of the following options:')
-        print('0. Exit')
-        print('1. Display access token')
-        print('2. Create Graph for initiated activities')
-        print('3. Create graph for activities performed on the user')
-        print('4. Create user sign-in graph')
-        print('5. Create a report')
-
-        try:
-            choice = int(input())
-        except ValueError:
-            choice = -1
-
-        if choice == 0:
-            print('Goodbye...')
-        elif choice == 1:
-            display_access_token(graph)
-        elif choice == 2:
-            call_audit_initiated(graph)
-        elif choice == 3:
-            call_audit_target(graph)
-        elif choice == 4:
-            call_signin(graph)
-        elif choice == 5:
-            create_final_report(graph)
-        else:
-            print('Invalid choice!\n')
+    create_final_report(graph)
 
 def greet_user(graph: Graph):
     user = graph.get_user()
