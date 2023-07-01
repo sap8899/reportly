@@ -23,9 +23,6 @@ Insert User principal name of a suspicious user.<br>
 Insert start and end times in the following format: 2022-11-16<br>
 **I recommend a range of no longer than a week.**
 
-After authentication, in order to create a full report choose the option "5"
-![image](https://user-images.githubusercontent.com/88736901/202486220-211a797c-bd10-4852-aa8d-ac29a893590e.png)
-
 When the report will be ready the tool will print "Your report is ready!".
 The reports are created in the executable's directory.
 
