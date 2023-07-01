@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from gui import Gui
 from ips import IPS
+import requests
 
 class Graph:
     settings: SectionProxy
@@ -30,6 +31,8 @@ class Graph:
         self.audit_target = []
         self.audit_signin = []
         self.bad_signin = []
+        self.owned_objects = []
+        self.owned_devices = []
         self.ips = {}
         self.roles_list = {}
         self.accept_activity = ["Remove owner from group", "Remove member from group", "Add owner to group", "Add member to role", "Add member to group"]
@@ -38,10 +41,90 @@ class Graph:
         self.device_code_credential = DeviceCodeCredential(client_id, tenant_id = tenant_id)
         self.user_client = GraphClient(credential=self.device_code_credential, scopes=graph_scopes)
 
+    def is_group_admin(self, groupId):
+        endpoint = f'https://graph.microsoft.com/v1.0/groups/{groupId}/memberOf'
+        request_url = endpoint
+        user_response = self.user_client.get(request_url)
+        json_response = user_response.json()
+        if not 'value' in json_response or len(json_response['value']) == 0:
+            return ""
+        results = json_response['value']
+        group_roles = ""
+        for result in results:
+            if result['@odata.type'] == '#microsoft.graph.directoryRole':
+                displayName = result['displayName']
+                group_roles += displayName + " ;"
+        return group_roles
+
+
+
+    def parse_owned_objects(self, objects):
+        for object in objects:
+            temp_dict = {}
+            oKeys = object.keys()
+            oType = object['@odata.type'].split(".")[-1] if '@odata.type' in oKeys else "None."
+            oId = object['id'] if 'id' in oKeys else "None."
+            oDisplayName = object['displayName'] if 'displayName' in oKeys else "None."
+            temp_dict["type"] = oType
+            temp_dict["id"] = oId
+            temp_dict["displayName"] = oDisplayName
+            group_roles = self.is_group_admin(oId) if oType == 'group' else ""
+            temp_dict["groupRoles"] = group_roles
+            self.owned_objects.append(temp_dict)
+
+    def get_owned_objects(self, url='url', pagination=False):
+        endpoint = f'https://graph.microsoft.com/beta/users/{self.sus_user}/ownedObjects'
+        request_url = f'{endpoint}'
+        if pagination:
+            request_url = url
+        user_response = self.user_client.get(request_url)
+        json_response = user_response.json()
+        if not 'value' in json_response or len(json_response['value']) == 0:
+            return "This user does not own any objects."
+        if '@odata.nextLink' in user_response:
+            self.parse_owned_objects(json_response['value'])
+            pagination_url = json_response['@odata.nextLink']
+            self.get_owned_objects(self, pagination_url, pagination=True)
+        self.parse_owned_objects(json_response['value'])
+        if len(self.audit_target) == 0:
+            return "This user does not own any objects."
+        return user_response.json()
+    
+    def parse_owned_devices(self, objects):
+        for object in objects:
+            temp_dict = {}
+            oKeys = object.keys()
+            oId = object['id'] if 'id' in oKeys else "None."
+            dId = object['deviceId'] if 'deviceId' in oKeys else "None."
+            dDisplayName = object['displayName'] if 'displayName' in oKeys else "None."
+            isCompliant = object['isCompliant'] if 'isCompliant' in oKeys else "None."
+            temp_dict["deviceID"] = dId
+            temp_dict["objectID"] = oId
+            temp_dict["displayName"] = dDisplayName
+            temp_dict["isCompliant"] = isCompliant
+            self.owned_devices.append(temp_dict)
+
+    def get_owned_devices(self, url='url', pagination=False):
+        endpoint = f'https://graph.microsoft.com/beta/users/{self.sus_user}/ownedDevices'
+        request_url = f'{endpoint}'
+        if pagination:
+            request_url = url
+        user_response = self.user_client.get(request_url)
+        json_response = user_response.json()
+        if not 'value' in json_response or len(json_response['value']) == 0:
+            return "This user does not own any devices."
+        if '@odata.nextLink' in user_response:
+            self.parse_owned_devices(json_response['value'])
+            pagination_url = json_response['@odata.nextLink']
+            self.get_owned_devices(self, pagination_url, pagination=True)
+        self.parse_owned_devices(json_response['value'])
+        if len(self.audit_target) == 0:
+            return "This user does not own any devices."
+        return user_response.json()
 
     def bad_sigin_errors(self):
         signin = self.bad_signin
-        error_code_list = [50088]
+        error_code_list = [50088, 50131,500021,500022,50053,50135,53011,530034,53010,530032]
         out = []
         for event in signin:
             if event["code"] in error_code_list:
@@ -69,11 +152,42 @@ class Graph:
     def get_sus_user(self):
         endpoint = f'/users/{self.sus_user}'
         # Only request specific properties
-        select = 'id,userPrincipalName,displayName,onPremisesDistinguishedName,onPremisesSyncEnabled,onPremisesUserPrincipalName,onPremisesSecurityIdentifier,createdDateTime'
+        select = 'id,userPrincipalName,displayName,onPremisesDistinguishedName,onPremisesSyncEnabled,onPremisesUserPrincipalName,onPremisesSecurityIdentifier,createdDateTime,userType,lastPasswordChangeDateTime'
         request_url = f'{endpoint}?$select={select}'
 
         user_response = self.user_client.get(request_url)
         return user_response.json()
+
+    def get_mfa_info(self):
+        user = self.get_sus_user()
+        principalName = user['userPrincipalName']
+        endpoint = 'https://graph.microsoft.com/beta/reports/credentialUserRegistrationDetails'
+        mfa_filter = f"userPrincipalName eq '{principalName}'"
+        request_url = f'{endpoint}?$filter={mfa_filter}'
+        user_response = self.user_client.get(request_url)
+        json_response = user_response.json()
+        if not 'value' in json_response or len(json_response['value']) == 0:
+            return "This user does not have any MFA configured."
+        mfa = json_response['value']
+        data = mfa[0]
+        authMetods = data["authMethods"]        
+        return authMetods
+    def get_location(self,ip):
+        response = requests.get(f'https://ipapi.co/{ip}/json/').json()
+        location_data = {
+            "city": response.get("city"),
+            "region": response.get("region"),
+            "country": response.get("country_name")
+        }
+        return location_data
+    
+    def get_ips_loc(self,ips_dict):
+        for ip in ips_dict.keys():
+            ip_loc = self.get_location(ip)
+            ips_dict[ip]['City'] = ip_loc['city']
+            ips_dict[ip]['region'] = ip_loc['region']
+            ips_dict[ip]['country'] = ip_loc['country']
+        return ips_dict
 
     def get_sus_roles(self):
         roles = []
@@ -91,10 +205,28 @@ class Graph:
         for role in json_response['value']:
             role_id = role['roleDefinitionId']
             roles.append(json_data[role_id])
-        return roles        
+        return roles
+    
+    def get_eligible_roles(self):
+        eligible_roles = []
+        user = self.get_sus_user()
+        id = user['id']
+        endpoint_eligible = '/roleManagement/directory/roleEligibilityScheduleInstances'
+        role_filter = f"principalId eq '{id}'"
+        request_url_eligible = f'{endpoint_eligible}?$filter={role_filter}'
+        user_response = self.user_client.get(request_url_eligible)
+        json_response = user_response.json()
+        if not 'value' in json_response or len(json_response['value']) == 0:
+            return "This user is not eligible to any role."
+        with open(r"roles_map.json") as json_file:
+            json_data = json.load(json_file)
+        for role in json_response['value']:
+            role_id = role['roleDefinitionId']
+            eligible_roles.append(json_data[role_id])
+        return eligible_roles          
 
     def get_sus_groups(self):
-        endpoint = f'/users/{self.sus_user}/memberOf'
+        endpoint = f'/users/{self.sus_user}/memberOf/microsoft.graph.group'
         select = 'id,displayName,description'
         request_url = f'{endpoint}?$select={select}'
         user_response = self.user_client.get(request_url)
@@ -109,13 +241,16 @@ class Graph:
         name_list = []
         description_list = []
         id_list = []
+        roles_list = []
         for group in groups:
             name_list.append(group['displayName'])
             description_list.append(group['description'])
             id_list.append(group['id'])
+            roles_list.append(self.is_group_admin(group['id']))
         groups_dict['GroupName'] = name_list
         groups_dict['Decription'] = description_list
         groups_dict['Id'] = id_list
+        groups_dict['GroupRoles'] = roles_list
         return groups_dict
 
 
@@ -285,7 +420,6 @@ class Graph:
     def parse_signin(self, audit, func):
         start = datetime.datetime.strptime(self.start_date, '%Y-%m-%d').date()
         end = datetime.datetime.strptime(self.end_date, '%Y-%m-%d').date()
-        
         for event in audit:
             temp_dict = {}
             created = event['createdDateTime']
@@ -293,7 +427,7 @@ class Graph:
             interactive = event['isInteractive']
             ip = event['ipAddress']
             app_used = event['clientAppUsed']
-            
+
             hover_string = f"<br>Interactive: {interactive}<br>ip: {ip}<br>app used: {app_used}"
             if func == "failed":
                 status_dict = event['status']
@@ -337,8 +471,18 @@ class Graph:
         url = fig.write_html("report_signin.html")
 
     def generate_report(self, initiated, target, signin,ips, signin_errors):
+        ips = self.get_ips_loc(ips)
+        self.get_owned_objects()
+        owned_objects = self.owned_objects if self.owned_objects else "This user does not own any objects."
+        self.get_owned_devices()
+        owned_devices = self.owned_devices if self.owned_devices else "This user does not own any devices."
         groups = self.get_sus_groups()
         user = self.get_sus_user()
         roles = self.get_sus_roles()
-        gui: Gui = Gui(user, groups, roles, initiated, target, signin, ips, signin_errors)
+        eligible_roles = self.get_eligible_roles()
+        roles_dict = {}
+        roles_dict["Roles"] = roles
+        roles_dict["Eligible"] = eligible_roles
+        mfa = self.get_mfa_info()
+        gui: Gui = Gui(user, groups, roles_dict, initiated, target, signin, ips, signin_errors, mfa, owned_objects, owned_devices)
         gui.generate_report()
