@@ -1,5 +1,6 @@
 
-![logo2](https://user-images.githubusercontent.com/88736901/202279693-ff033711-8e8d-4004-a976-49d50c82cb70.png)
+![image](https://github.com/sap8899/reportly/assets/88736901/80428e0d-e566-4b9d-897f-a0b7d0567a35)
+
 
 Reportly is an AzureAD user activity report tool.
 
