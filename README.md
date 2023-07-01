@@ -25,7 +25,7 @@ Insert start and end times in the following format: 2022-11-16<br>
 When the report will be ready the tool will print "Your report is ready!".
 The reports are created in the executable's directory.
 
-**Attached an example report "report_example.html**
+**Attached an example report "report_example.html"**
 
 # Installation
 In order to use the tool you will need an AzureAD application with the following **delegated** microsoft graph api permissions:<br>
