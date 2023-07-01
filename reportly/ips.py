@@ -1,4 +1,5 @@
 from statistics import median
+import requests
 
 class IPS:
     
@@ -6,6 +7,17 @@ class IPS:
         self.ips_dict = ips_dict
         self.median_out_ips = []
     
+    
+    def get_ip_loc(self, ip):
+        response = requests.get(f'https://ipapi.co/{ip}/json/').json()
+        location_data = {
+            "ip": ip,
+            "city": response.get("city"),
+            "region": response.get("region"),
+            "country": response.get("country_name")
+        }
+        return location_data
+
     def analyze_ips(self):
         ips_dict = self.ips_dict
         ips_count = len(ips_dict.keys())
