@@ -14,9 +14,6 @@ When running the tool, the researcher will enter as input a suspicious user and 
 4. User login and failure logs
 
 
-https://user-images.githubusercontent.com/88736901/202284687-9862e097-a5d6-4557-a474-d99e37269c2e.mp4
-
-
 # Usage
 When running the tool, a link to authentication and a device code will show, follow the link and enter the code to authenticate.
 ![image](https://github.com/sap8899/reportly/assets/88736901/80428e0d-e566-4b9d-897f-a0b7d0567a35)
