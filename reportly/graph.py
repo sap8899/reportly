@@ -19,11 +19,12 @@ class Graph:
     client_credential: ClientSecretCredential
     app_client: GraphClient
 
-    def __init__(self, config: SectionProxy, sus_user, start_date, end_date):
+    def __init__(self, config: SectionProxy, sus_user, start_date, end_date, out_file="report.html"):
         self.settings = config
         client_id = self.settings['clientId']
         tenant_id = self.settings['tenantId']
         graph_scopes = self.settings['graphUserScopes'].split(' ')
+        self.out_file = out_file
         self.sus_user = sus_user
         self.start_date = start_date
         self.end_date = end_date
@@ -121,6 +122,7 @@ class Graph:
         if len(self.audit_target) == 0:
             return "This user does not own any devices."
         return user_response.json()
+
 
     def bad_sigin_errors(self):
         signin = self.bad_signin
@@ -232,11 +234,11 @@ class Graph:
         user_response = self.user_client.get(request_url)
         json_response = user_response.json()
         if not 'value' in json_response or len(json_response['value']) == 0:
-            return "This user is not a member of any group."
+            return {}
         group_dict = self.parse_sus_groups(json_response['value'])
         return group_dict
     
-    def parse_sus_groups(self, groups):
+    def parse_sus_groups(self, groups, transitive="False"):
         groups_dict = {}
         name_list = []
         description_list = []
@@ -251,7 +253,19 @@ class Graph:
         groups_dict['Decription'] = description_list
         groups_dict['Id'] = id_list
         groups_dict['GroupRoles'] = roles_list
+        groups_dict['Transitive'] = transitive
         return groups_dict
+
+    def get_sus_groups_transitive(self):
+        endpoint = f'/users/{self.sus_user}/transitiveMemberOf/microsoft.graph.group'
+        select = 'id,displayName,description'
+        request_url = f'{endpoint}?$select={select}'
+        user_response = self.user_client.get(request_url)
+        json_response = user_response.json()
+        if not 'value' in json_response or len(json_response['value']) == 0:
+            return {}
+        group_dict = self.parse_sus_groups(json_response['value'], transitive="True")
+        return group_dict
 
 
     def get_audit_target(self, url='/auditLogs/directoryAudits', pagination=False):
@@ -476,7 +490,11 @@ class Graph:
         owned_objects = self.owned_objects if self.owned_objects else "This user does not own any objects."
         self.get_owned_devices()
         owned_devices = self.owned_devices if self.owned_devices else "This user does not own any devices."
-        groups = self.get_sus_groups()
+        groups_transitive = self.get_sus_groups_transitive()
+        groups_non_transitive = self.get_sus_groups()
+        groups_dict = {}
+        groups_dict["transitive"] = groups_transitive
+        groups_dict["nonTransitive"] = groups_non_transitive
         user = self.get_sus_user()
         roles = self.get_sus_roles()
         eligible_roles = self.get_eligible_roles()
@@ -484,5 +502,5 @@ class Graph:
         roles_dict["Roles"] = roles
         roles_dict["Eligible"] = eligible_roles
         mfa = self.get_mfa_info()
-        gui: Gui = Gui(user, groups, roles_dict, initiated, target, signin, ips, signin_errors, mfa, owned_objects, owned_devices)
-        gui.generate_report()
+        gui: Gui = Gui(user, groups_dict, roles_dict, initiated, target, signin, ips, signin_errors, mfa, owned_objects, owned_devices)
+        gui.generate_report(self.out_file)
