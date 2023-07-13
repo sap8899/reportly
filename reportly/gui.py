@@ -92,10 +92,12 @@ class Gui:
     def create_groups_output(self):
         if self.groups == "None" and self.transitive_groups == "None":
             return "This user is not a member of any group."
-        group_data = dict(self.transitive_groups)
-        group_data.update(self.groups)
-        groups_df = pd.DataFrame(data=group_data)
-        groups_html = groups_df.style.to_html(classes='table table-stripped')
+        transitive_df = pd.DataFrame(data=self.transitive_groups)
+        groups_df = pd.DataFrame(data=self.groups)
+        temp_df = transitive_df.assign(InGroups=transitive_df.Id.isin(groups_df.Id).astype(int))
+        temp_df.loc[temp_df.InGroups == 1, "Transitive"] = "False"
+        groups_data_df = temp_df.drop("InGroups", axis=1)
+        groups_html = groups_data_df.style.to_html(classes='table table-stripped')
         return groups_html
 
     def generate_report(self, out_file):
