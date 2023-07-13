@@ -11,11 +11,12 @@ import plotly.graph_objects as go
 
 
 class Gui:    
-    def __init__(self, sus, groups, roles_dict, initiated, target, signin,ips,signin_erros, mfa, owned_objects, owned_devices):
+    def __init__(self, sus, groups_dict, roles_dict, initiated, target, signin,ips,signin_erros, mfa, owned_objects, owned_devices):
         self.sus = sus
-        self.groups = groups
         self.roles = roles_dict["Roles"]
         self.eligible_roles = roles_dict["Eligible"]
+        self.groups = groups_dict["nonTransitive"]
+        self.transitive_groups = groups_dict["transitive"]
         self.initiated = initiated
         self.target = target
         self.signin = signin
@@ -89,13 +90,15 @@ class Gui:
         return roles_string
 
     def create_groups_output(self):
-        if self.groups == "This user is not a member of any group.":
-            return self.groups
-        groups_df = pd.DataFrame(data=self.groups)
+        if self.groups == "None" and self.transitive_groups == "None":
+            return "This user is not a member of any group."
+        group_data = dict(self.transitive_groups)
+        group_data.update(self.groups)
+        groups_df = pd.DataFrame(data=group_data)
         groups_html = groups_df.style.to_html(classes='table table-stripped')
         return groups_html
 
-    def generate_report(self):
+    def generate_report(self, out_file):
         errors_html = self.parse_bad_signin()
         groups_html = self.create_groups_output()
         roles_html = self.create_roles_string()
@@ -280,5 +283,5 @@ for (i = 0; i < coll.length; i++) {
         #fw = open(r"report.html", encoding="utf8")
         #fw.write(html_string)
         #fw.close()
-        with open(r"report.html", 'w', encoding = 'utf8') as fw:
+        with open(out_file, 'w', encoding = 'utf8') as fw:
             fw.write(html_string)
