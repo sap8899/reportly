@@ -26,8 +26,10 @@ U |  _"\ u \| ___"|/U|  _"\ u  \/"_ \/U |  _"\ u  |_ " _|  |"|     \ \ / /
     sus_user = input("Enter UserPrincipalName: ")
     start_date = input("Enter start date: ")
     end_date = input("Enter end date: ")
-
-    graph: Graph = Graph(azure_settings, sus_user, start_date, end_date)
+    output_file = input("Enter output path: ")
+    if output_file == "":
+        output_file = "report.html"
+    graph: Graph = Graph(azure_settings, sus_user, start_date, end_date, output_file)
     greet_user(graph)
     create_final_report(graph)
 
