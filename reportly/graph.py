@@ -235,10 +235,10 @@ class Graph:
         json_response = user_response.json()
         if not 'value' in json_response or len(json_response['value']) == 0:
             return {}
-        group_dict = self.parse_sus_groups(json_response['value'])
+        group_dict = self.parse_sus_groups(json_response['value'], transitive="False")
         return group_dict
     
-    def parse_sus_groups(self, groups, transitive="False"):
+    def parse_sus_groups(self, groups, transitive):
         groups_dict = {}
         name_list = []
         description_list = []
@@ -252,7 +252,7 @@ class Graph:
             roles_list.append(self.is_group_admin(group['id']))
             transitive_list.append(transitive)
         groups_dict['GroupName'] = name_list
-        groups_dict['Decription'] = description_list
+        groups_dict['Description'] = description_list
         groups_dict['Id'] = id_list
         groups_dict['GroupRoles'] = roles_list
         groups_dict['Transitive'] = transitive_list
