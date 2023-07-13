@@ -244,16 +244,18 @@ class Graph:
         description_list = []
         id_list = []
         roles_list = []
+        transitive_list = []
         for group in groups:
             name_list.append(group['displayName'])
             description_list.append(group['description'])
             id_list.append(group['id'])
             roles_list.append(self.is_group_admin(group['id']))
+            transitive_list.append(transitive)
         groups_dict['GroupName'] = name_list
         groups_dict['Decription'] = description_list
         groups_dict['Id'] = id_list
         groups_dict['GroupRoles'] = roles_list
-        groups_dict['Transitive'] = transitive
+        groups_dict['Transitive'] = transitive_list
         return groups_dict
 
     def get_sus_groups_transitive(self):
