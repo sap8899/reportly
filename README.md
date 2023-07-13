@@ -3,7 +3,7 @@
 ![logo](https://github.com/sap8899/reportly/assets/88736901/9a1d58a9-2e21-4e75-982c-4eb3950f2ed5)
 
 
-Reportly is an AzureAD user activity report tool.
+Reportly is an EntraID user activity report tool.
 
 # About the tool
 This is a tool that will help blue teams during a cloud incident.
@@ -23,12 +23,12 @@ Insert start and end times in the following format: 2022-11-16<br>
 **I recommend a range of no longer than a week.**
 
 When the report will be ready the tool will print "Your report is ready!".
-The reports are created in the executable's directory.
+The reports are created in the executable's directory by default.
 
 **Attached an example report "report_example.html"**
 
 # Installation
-In order to use the tool you will need an AzureAD application with the following **delegated** microsoft graph api permissions:<br>
+In order to use the tool you will need an EntraID application with the following **delegated** microsoft graph api permissions:<br>
 * AuditLog.Read.All<br>
 * GroupMember.Read.All<br>
 * RoleManagement.Read.Directory<br>
